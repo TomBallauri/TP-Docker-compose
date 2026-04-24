@@ -1,0 +1,108 @@
+services:
+
+  db_mysql:
+    image: mysql:9.3
+    restart: on-failure
+    environment:
+      - MYSQL_ROOT_PASSWORD
+      - MYSQL_DATABASE
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sqlfiles:/docker-entrypoint-initdb.d
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "test $(mysql -u root -p$$MYSQL_ROOT_PASSWORD $$MYSQL_DATABASE -sNe 'SELECT COUNT(*) FROM utilisateurs;') -eq 4"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  db_mongo:
+    build: ./mongo
+    restart: on-failure
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"quit(db.getSiblingDB('blog_db').posts.countDocuments() === 5 ? 0 : 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  admin_mysql:
+    image: adminer
+    restart: on-failure
+    ports:
+      - 8080:8080
+    networks:
+      - backend
+    depends_on:
+      db_mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://localhost:8080 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  admin_mongo:
+    image: mongo-express:latest
+    restart: on-failure
+    ports:
+      - 8081:8081
+    environment:
+      - ME_CONFIG_MONGODB_URL=${MONGO_URL}
+      - ME_CONFIG_BASICAUTH=false
+    networks:
+      - backend
+    depends_on:
+      db_mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:8081', r => process.exit(r.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    restart: on-failure
+    ports:
+      - 8000:8000
+    environment:
+      - MYSQL_ROOT_PASSWORD
+      - MYSQL_DATABASE
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+      - MYSQL_HOST
+      - MONGO_URL
+    networks:
+      - backend
+    depends_on:
+      db_mysql:
+        condition: service_healthy
+      db_mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  mysql_data:
+  mongo_data:
+
+networks:
+  backend:
+    driver: bridge
