@@ -21,10 +21,9 @@ jobs:
         - name: Build Mongo image
           run: docker build -t my-mongo:1.0.0 -f ./mongo/Dockerfile .
         - name: Docker Scout Scan
-            uses: docker/scout-action@v1
-            with:
-              command: cves
-              image: my-app:1.0.0
-              file: ./Dockerfile
-              only-severities: critical,high
-              exit-code: true
+          uses: docker/scout-action@v1
+          with:
+            command: cves
+            image: my-app:1.0.0
+            only-severities: critical,high
+            exit-code: true
