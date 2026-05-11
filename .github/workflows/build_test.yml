@@ -1,10 +1,8 @@
 name: Build and Test Application
 
 on:
-
   push:
     branches: [main]
-
   pull_request:
     branches: [main]
 
@@ -12,45 +10,38 @@ jobs:
   build_test:
     runs-on: ubuntu-latest
     steps:
-        - name: Checkout code
-          uses: actions/checkout@v4
-        - name: Set up Docker Buildx
-          uses: docker/setup-buildx-action@v3
-        - name: Build API image
-          run: docker build -t my-app:1.0.0 -f ./api/Dockerfile .
-        - name: Build Mongo image
-          run: docker build -t my-mongo:1.0.0 -f ./mongo/Dockerfile .
-        - name: Docker Scout Scan
-          uses: docker/scout-action@v1
-          with:
-            command: cves
-            image: my-app:1.0.0
-            only-severities: critical,high
-            exit-code: true
-        - name: Docker Scout Scan Mongo
-          uses: docker/scout-action@v1
-          with:
-            username: ${{ secrets.DOCKER_USERNAME }}
-            password: ${{ secrets.DOCKER_PASSWORD }}
-             - name: Docker Scout Scan Python
-          uses: docker/scout-action@v1
-          with:
-            command: recommendations
-            image: my-app-python:1.0.0
-            file: ./api/Dockerfile
-            only-severities: criticals,high
-            exit-code: false
-        - name: Docker Scout Scan Mongo
-          uses: docker/scout-action@v1
-          with:
-            command: cves,recommendations
-            image: my-app-mongo:1.0.0
-            file: ./MongoDB/Dockerfile
-            only-severities: criticals,high
-            exit-code: false 
-          docker-compose:
-            needs: build-test
-            runs-on: ubuntu-latest
-            steps:
-              - name: Checkout code
-                run: docker compose up -d
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build API image
+        run: docker build -t my-app:1.0.0 -f ./api/Dockerfile .
+      - name: Build Mongo image
+        run: docker build -t my-mongo:1.0.0 -f ./mongo/Dockerfile .
+      - name: Docker Scout Scan
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: my-app:1.0.0
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          only-severities: critical,high
+          exit-code: true
+      - name: Docker Scout Scan Mongo
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: my-mongo:1.0.0
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          only-severities: critical,high
+          exit-code: true
+
+  docker-compose:
+    needs: build_test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run docker compose
+        run: docker compose up -d
