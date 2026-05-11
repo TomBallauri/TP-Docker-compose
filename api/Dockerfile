@@ -2,10 +2,10 @@ FROM python:3.13-alpine
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY api/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY api/ .
 
 RUN adduser -D -u 1001 apiuser && chown -R apiuser:apiuser /app
 USER apiuser
