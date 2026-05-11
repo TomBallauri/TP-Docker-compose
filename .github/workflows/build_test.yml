@@ -23,8 +23,8 @@ jobs:
         with:
           command: cves
           image: my-app:1.0.0
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          dockerhub-user: ${{ secrets.DOCKER_USERNAME }}
+          dockerhub-password: ${{ secrets.DOCKER_PASSWORD }}
           only-severities: critical,high
           exit-code: true
       - name: Docker Scout Scan Mongo
@@ -32,8 +32,8 @@ jobs:
         with:
           command: cves
           image: my-mongo:1.0.0
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          dockerhub-user: ${{ secrets.DOCKER_USERNAME }}
+          dockerhub-password: ${{ secrets.DOCKER_PASSWORD }}
           only-severities: critical,high
           exit-code: true
 
