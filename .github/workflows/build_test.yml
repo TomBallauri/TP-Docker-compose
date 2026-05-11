@@ -27,3 +27,30 @@ jobs:
             image: my-app:1.0.0
             only-severities: critical,high
             exit-code: true
+        - name: Docker Scout Scan Mongo
+          uses: docker/scout-action@v1
+          with:
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+             - name: Docker Scout Scan Python
+          uses: docker/scout-action@v1
+          with:
+            command: recommendations
+            image: my-app-python:1.0.0
+            file: ./api/Dockerfile
+            only-severities: criticals,high
+            exit-code: false
+        - name: Docker Scout Scan Mongo
+          uses: docker/scout-action@v1
+          with:
+            command: cves,recommendations
+            image: my-app-mongo:1.0.0
+            file: ./MongoDB/Dockerfile
+            only-severities: criticals,high
+            exit-code: false 
+          docker-compose:
+            needs: build-test
+            runs-on: ubuntu-latest
+            steps:
+              - name: Checkout code
+                run: docker compose up -d
